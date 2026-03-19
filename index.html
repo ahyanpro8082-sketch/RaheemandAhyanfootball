@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Football Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; margin: auto; }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Teams
+let team1 = { name: "Barcelona", color: "blue", players: ["Lewandowski"] };
+let team2 = { name: "Real Madrid", color: "white", players: ["Bellingham"] };
+
+// Players
+let player = { x: 100, y: 250, size: 20, speed: 4, name: team1.players[0] };
+let opponent = { x: 600, y: 250, size: 20, speed: 2.5, name: team2.players[0] };
+
+// Ball
+let ball = { x: 400, y: 250, size: 10, dx: 0, dy: 0 };
+
+// Score
+let score1 = 0;
+let score2 = 0;
+
+// Controls
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function movePlayer() {
+  if (keys["ArrowUp"]) player.y -= player.speed;
+  if (keys["ArrowDown"]) player.y += player.speed;
+  if (keys["ArrowLeft"]) player.x -= player.speed;
+  if (keys["ArrowRight"]) player.x += player.speed;
+}
+
+function moveOpponent() {
+  if (ball.x < opponent.x) opponent.x -= opponent.speed;
+  if (ball.x > opponent.x) opponent.x += opponent.speed;
+  if (ball.y < opponent.y) opponent.y -= opponent.speed;
+  if (ball.y > opponent.y) opponent.y += opponent.speed;
+}
+
+function kickBall(p) {
+  let dx = ball.x - p.x;
+  let dy = ball.y - p.y;
+  let dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist < p.size + ball.size) {
+    ball.dx = dx * 0.3;
+    ball.dy = dy * 0.3;
+  }
+}
+
+function update() {
+  movePlayer();
+  moveOpponent();
+  kickBall(player);
+  kickBall(opponent);
+
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+  ball.dx *= 0.98;
+  ball.dy *= 0.98;
+
+  // Goals
+  if (ball.x > 780 && ball.y > 200 && ball.y < 300) {
+    score1++;
+    reset();
+  }
+  if (ball.x < 20 && ball.y > 200 && ball.y < 300) {
+    score2++;
+    reset();
+  }
+
+  [player, opponent].forEach(p => {
+    p.x = Math.max(p.size, Math.min(canvas.width - p.size, p.x));
+    p.y = Math.max(p.size, Math.min(canvas.height - p.size, p.y));
+  });
+}
+
+function reset() {
+  ball.x = 400;
+  ball.y = 250;
+  ball.dx = 0;
+  ball.dy = 0;
+}
+
+function draw() {
+  // Grass
+  for (let i = 0; i < canvas.height; i += 40) {
+    ctx.fillStyle = i % 80 === 0 ? "#2e8b57" : "#3cb371";
+    ctx.fillRect(0, i, canvas.width, 40);
+  }
+
+  // Middle line
+  ctx.strokeStyle = "white";
+  ctx.beginPath();
+  ctx.moveTo(400, 0);
+  ctx.lineTo(400, 500);
+  ctx.stroke();
+
+  // Players
+  ctx.fillStyle = team1.color;
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = team2.color;
+  ctx.beginPath();
+  ctx.arc(opponent.x, opponent.y, opponent.size, 0, Math.PI*2);
+  ctx.fill();
+
+  // Ball
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI*2);
+  ctx.fill();
+
+  // Score
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText(score1 + " - " + score2, 370, 30);
+
+  // Names
+  ctx.font = "14px Arial";
+  ctx.fillText(player.name, player.x - 20, player.y - 25);
+  ctx.fillText(opponent.name, opponent.x - 20, opponent.y - 25);
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
